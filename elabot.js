@@ -120,36 +120,48 @@ bot.onText(/\/proposals/, async (msg, data) => {
   const block = await fetch("https://node1.elaphant.app/api/v1/block/height");
   const height = await block.json();
 
-  let proposals = `<b>Cyber Republic Active Proposals</b>`;
-
-  const prop1 = proposalList.data.list[0];
-
-  const secondsRemaining =
-    parseFloat(prop1.proposedEndsHeight) - parseFloat(height.Result) < 0
-      ? 0
-      : (parseFloat(prop1.proposedEndsHeight) - parseFloat(height.Result)) * 2 * 60;
-  const days = Math.floor(secondsRemaining / (60 * 60 * 24));
-  const hours = Math.floor((secondsRemaining % (60 * 60 * 24)) / (60 * 60));
-  const minutes = Math.floor((secondsRemaining % (60 * 60)) / 60);
-
-  proposals = `<strong>${prop1.title}</strong> \n \n<b>Proposed by</b> - ${prop1.proposedBy} \n<b>Status</b> - ${prop1.status} \n<b>Time remaining</b> - ${days} days, ${hours} hours, ${minutes} minutes\n \n`;
-
-  let support = 0;
-  let reject = 0;
-  let undecided = 0;
-  let abstention = 0;
-
-  prop1.voteResult.forEach((vote) => {
-    if (vote.value === "support") support++;
-    if (vote.value === "reject") reject++;
-    if (vote.value === "undecided") undecided++;
-    if (vote.value === "abstention") abstention++;
+  const active = proposalList.data.list.filter((item) => {
+    return item.proposedEndsHeight > height.Result && item.status === "PROPOSED";
   });
 
-  proposals += `<b><u>Council Votes</u></b>\n&#9989;  Support - <b>${support}</b>\n&#10060;  Reject - <b>${reject}</b>\n&#128280;  Abstain - <b>${abstention}</b>\n&#9888;  Undecided - <b>${undecided}</b>\n\n`;
-  proposals += `<a href='https://www.cyberrepublic.org/proposals/${prop1._id}'>View on Cyber Republic website</a>`;
+  let proposals = `<pre><b>Cyber Republic Active Proposals</b></pre>`;
+  // const active = proposalList.data.list[0];
 
-  bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
+  if (active.length > 0) {
+    let index = 0;
+    active.forEach((item, index) => {
+      index++;
+      const secondsRemaining =
+        parseFloat(item.proposedEndsHeight) - parseFloat(height.Result) < 0
+          ? 0
+          : (parseFloat(item.proposedEndsHeight) - parseFloat(height.Result)) * 2 * 60;
+      const days = Math.floor(secondsRemaining / (60 * 60 * 24));
+      const hours = Math.floor((secondsRemaining % (60 * 60 * 24)) / (60 * 60));
+      const minutes = Math.floor((secondsRemaining % (60 * 60)) / 60);
+
+      // proposals = `<strong>${item.title}</strong> \n \n<b>Proposed by</b> - ${item.proposedBy} \n<b>Status</b> - ${item.status} \n<b>Time remaining</b> - ${days} days, ${hours} hours, ${minutes} minutes\n \n`;
+      proposals += `\n\n<strong>${index}. ${item.title}</strong> \n \n<b>Proposed by</b> - ${item.proposedBy} \n<b>Time remaining</b> - ${days} days, ${hours} hours, ${minutes} minutes\n \n`;
+
+      let support = 0;
+      let reject = 0;
+      let undecided = 0;
+      let abstention = 0;
+
+      item.voteResult.forEach((vote) => {
+        if (vote.value === "support") support++;
+        if (vote.value === "reject") reject++;
+        if (vote.value === "undecided") undecided++;
+        if (vote.value === "abstention") abstention++;
+      });
+
+      proposals += `<b><u>Council Votes</u></b>\n&#9989;  Support - <b>${support}</b>\n&#10060;  Reject - <b>${reject}</b>\n&#128280;  Abstain - <b>${abstention}</b>\n&#9888;  Undecided - <b>${undecided}</b>\n\n`;
+      proposals += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View on Cyber Republic website</a></i>`;
+    });
+    bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
+  } else {
+    proposals += `There are currently no proposals in the council voting period`;
+    bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
+  }
 });
 
 // Automated section
@@ -158,7 +170,7 @@ const council = {
   "60d094eec05ef80078cf689e": "Donald Bullers",
   "60cf124660cb2c00781146e2": "Elation Studios",
   "60db5e08c05ef80078cfdb85": "Mark Xing",
-  // "": "Brittany Kaiser | Own Your Data",
+  "60dcc3b4c05ef80078cfe9b5": "Brittany Kaiser | Own Your Data",
   "60c444e0a9daba0078a58aed": "Ryan | Starfish Labs",
   "60c4826d77d3640078f4ddfe": "Rebecca Zhu",
   "60cff34cc05ef80078cf60e8": "SJun Song",
@@ -233,37 +245,37 @@ setInterval(async () => {
 
       if (blocksRemaining > 4990) {
         if (storedAlerts[item._id] === 7) return;
-        message = `<strong>&#10055; Whoa! A new proposal is now open for voting! &#128064;</strong>\n\n<i>${item.title}</i>\n\n`;
+        message = `<strong>&#10055; Whoa! A new proposal is now open for voting! &#128064;</strong>\n\n${item.title}\n\n`;
         storedAlerts[item._id] = 7;
       } else if (blocksRemaining < 3600 && blocksRemaining > 3550) {
         if (storedAlerts[item._id] === 5) return;
-        message = `<strong>&#128076; Reminder! There are <u>5 days</u> remaining to vote on proposal:</strong>\n\n<i>${item.title}</i>\n\n`;
+        message = `<strong>&#128076; Reminder! There are <u>5 days</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n`;
         storedAlerts[item._id] = 5;
       } else if (blocksRemaining < 2160 && blocksRemaining > 2110) {
         if (storedAlerts[item._id] === 3) return;
-        message = `<strong>&#128073; Hey you! &#128072; There are <u>3 days</u> remaining to vote on proposal:</strong>\n\n<i>${item.title}</i>\n\n${tally}`;
+        message = `<strong>&#128073; Hey you! &#128072; There are <u>3 days</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
         if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 3;
       } else if (blocksRemaining < 720 && blocksRemaining > 670) {
         if (storedAlerts[item._id] === 1) return;
-        message = `<strong>&#9888; Warning! &#9888; There is only <u>1 day</u> remaining to vote on proposal:</strong>\n\n<i>${item.title}</i>\n\n${tally}`;
+        message = `<strong>&#9888; Warning! &#9888; There is only <u>1 day</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
         if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 1;
       } else if (blocksRemaining < 360 && blocksRemaining > 310) {
         if (storedAlerts[item._id] === 0.5) return;
-        message = `<strong>&#8252; Alert! &#8252; There are only <u>12 hours</u> remaining to vote on proposal:</strong>\n\n<i>${item.title}</i>\n\n${tally}`;
+        message = `<strong>&#8252; Alert! &#8252; There are only <u>12 hours</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
         if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 0.5;
       } else if (blocksRemaining <= 7) {
         if (storedAlerts[item._id] === 0) return;
-        message = `<strong>&#9760; The council voting period has elapsed for proposal:</strong>\n\n<i>${item.title}</i>\n\n${tally}`;
+        message = `<strong>&#9760; The council voting period has elapsed for proposal:</strong>\n\n${item.title}\n\n${tally}`;
         if (undecidedList.length > 0) message += `${failedList}\n`;
         storedAlerts[item._id] = 0;
       } else {
         return;
       }
 
-      message += `<a href='https://www.cyberrepublic.org/proposals/${item._id}'>View the full proposal here</a>\n\nUse /proposals to fetch real time voting status`;
+      message += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View the full proposal here</a></i>\n\nUse /proposals to fetch real time voting status`;
       bot.sendMessage(CRcouncil, message, { parse_mode: "HTML" });
       bot.sendMessage(ELAmain, message, { parse_mode: "HTML" });
       // bot.sendMessage(Test, message, { parse_mode: "HTML" });
