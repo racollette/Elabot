@@ -168,7 +168,7 @@ const council = {
   "5ee0d99f9e10fd007849e53e": "Orchard Trinity",
 };
 
-// const chatId = "-501549984"; // Bot test group
+const Test = "-501549984"; // Bot test group
 const CRcouncil = "-313280674"; // CR council group
 const ELAmain = "-1001243388272"; // Elastos main chat
 
@@ -193,15 +193,13 @@ setInterval(async () => {
   const active = proposalList.data.list.filter((item) => {
     return item.proposedEndsHeight > height.Result && item.status === "PROPOSED";
   });
-  // const active = proposalList.data.list.filter((item) => item.proposedEndsHeight === 899816);
-  // console.log(active);
 
   if (active.length > 0) {
     active.forEach((item) => {
-      let support,
-        reject,
-        abstention,
-        undecided = 0;
+      let support = 0;
+      let reject = 0;
+      let abstention = 0;
+      let undecided = 0;
       let undecideds = [];
 
       item.voteResult.forEach((vote) => {
@@ -268,6 +266,7 @@ setInterval(async () => {
       message += `<a href='https://www.cyberrepublic.org/proposals/${item._id}'>View the full proposal here</a>\n\nUse /proposals to fetch real time voting status`;
       bot.sendMessage(CRcouncil, message, { parse_mode: "HTML" });
       bot.sendMessage(ELAmain, message, { parse_mode: "HTML" });
+      // bot.sendMessage(Test, message, { parse_mode: "HTML" });
     });
   }
 }, 300000);
