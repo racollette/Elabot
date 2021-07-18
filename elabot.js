@@ -1,6 +1,6 @@
 const TelegramBot = require("node-telegram-bot-api");
-
-const token = "1823958290:AAHR1XrZxG7yjoaY_qZW0vO6YUNiqkDMceA";
+const fs = require("fs");
+const token = fs.readFileSync(".access").toString().trim();
 const fetch = require("node-fetch");
 const request = require("request");
 
