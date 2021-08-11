@@ -129,7 +129,7 @@ bot.onText(/\/proposals/, async (msg, data) => {
 
   if (active.length > 0) {
     let index = 0;
-    active.forEach((item, index) => {
+    active.reverse().forEach((item, index) => {
       index++;
       const secondsRemaining =
         parseFloat(item.proposedEndsHeight) - parseFloat(height.Result) < 0
@@ -146,16 +146,28 @@ bot.onText(/\/proposals/, async (msg, data) => {
       let reject = 0;
       let undecided = 0;
       let abstention = 0;
+      let unchained = [];
 
       item.voteResult.forEach((vote) => {
-        if (vote.value === "support") support++;
-        if (vote.value === "reject") reject++;
+	if (vote.value === "support" && vote.status === "chained") support++;
+        if (vote.value === "reject" && vote.status === "chained") reject++;
         if (vote.value === "undecided") undecided++;
-        if (vote.value === "abstention") abstention++;
+        if (vote.value === "abstention" && vote.status === "chained") abstention++;
+        if (vote.value !== "undecided" && vote.status === "unchain") {
+          unchained.push(`${council[vote.votedBy]} voted ${vote.value} but did not chain the vote`);
+	}
       });
 
+      let unchainedList = `<u>Warnings</u>\n`;
+        if (unchained.length > 0) {
+        unchained.forEach((warning) => {
+          unchainedList += `${warning}\n`
+        });
+      }
+
       proposals += `<b><u>Council Votes</u></b>\n&#9989;  Support - <b>${support}</b>\n&#10060;  Reject - <b>${reject}</b>\n&#128280;  Abstain - <b>${abstention}</b>\n&#9888;  Undecided - <b>${undecided}</b>\n\n`;
-      proposals += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View on Cyber Republic website</a></i>`;
+      if (unchained.length > 0) proposals += `${unchainedList}\n`;      
+      proposals += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View on Cyber Republic website</a></i>`; 
     });
     bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
   } else {
@@ -213,19 +225,28 @@ setInterval(async () => {
       let abstention = 0;
       let undecided = 0;
       let undecideds = [];
+      let unchained = [];
 
       item.voteResult.forEach((vote) => {
-        if (vote.value === "support") support++;
-        if (vote.value === "reject") reject++;
+        if (vote.value === "support" && vote.status === "chained") support++;
+        if (vote.value === "reject" && vote.status === "chained") reject++;
         if (vote.value === "undecided") {
           undecided++;
           undecideds.push(vote.votedBy);
         }
-        if (vote.value === "abstention") abstention++;
+        if (vote.value === "abstention" && vote.status === "chained") abstention++;
+	if (vote.value !== "undecided" && vote.status === "unchain") {
+	  unchained.push(`${council[vote.votedBy]} voted ${vote.value} but did not chain the vote`);
+	}
       });
 
       let tally = `<u>Current voting status</u>\n&#9989;  Support - <b>${support}</b>\n&#10060;  Reject - <b>${reject}</b>\n&#128280;  Abstain - <b>${abstention}</b>\n&#9888;  Undecided - <b>${undecided}</b>\n\n`;
-
+      let unchainedList = `<u>Warnings</u>\n`;
+      if (unchained.length > 0) {
+	unchained.forEach((warning) => {
+	  unchainedList += `${warning}\n`
+	});
+      }
       let undecidedList = `<u>Council members who have not yet voted</u>\n`;
       let failedList = `<u>Council members who failed to vote</u>\n`;
       if (undecideds.length === 0) {
@@ -254,22 +275,26 @@ setInterval(async () => {
       } else if (blocksRemaining < 2160 && blocksRemaining > 2110) {
         if (storedAlerts[item._id] === 3) return;
         message = `<strong>&#128073; Hey you! &#128072; There are <u>3 days</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
-        if (undecidedList.length > 0) message += `${undecidedList}\n`;
+        if (unchained.length > 0) message += `${unchainedList}\n`;
+	if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 3;
       } else if (blocksRemaining < 720 && blocksRemaining > 670) {
         if (storedAlerts[item._id] === 1) return;
         message = `<strong>&#9888; Warning! &#9888; There is only <u>1 day</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
+        if (unchained.length > 0) message += `${unchainedList}\n`;
         if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 1;
       } else if (blocksRemaining < 360 && blocksRemaining > 310) {
         if (storedAlerts[item._id] === 0.5) return;
         message = `<strong>&#8252; Alert! &#8252; There are only <u>12 hours</u> remaining to vote on proposal:</strong>\n\n${item.title}\n\n${tally}`;
-        if (undecidedList.length > 0) message += `${undecidedList}\n`;
+        if (unchained.length > 0) message += `${unchainedList}\n`;
+	if (undecidedList.length > 0) message += `${undecidedList}\n`;
         storedAlerts[item._id] = 0.5;
       } else if (blocksRemaining <= 7) {
         if (storedAlerts[item._id] === 0) return;
         message = `<strong>&#9760; The council voting period has elapsed for proposal:</strong>\n\n${item.title}\n\n${tally}`;
-        if (undecidedList.length > 0) message += `${failedList}\n`;
+	if (unchained.length > 0) message += `${unchainedList}\n`;
+	if (undecidedList.length > 0) message += `${failedList}\n`;
         storedAlerts[item._id] = 0;
       } else {
         return;
@@ -278,7 +303,7 @@ setInterval(async () => {
       message += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View the full proposal here</a></i>\n\nUse /proposals to fetch real time voting status`;
       bot.sendMessage(CRcouncil, message, { parse_mode: "HTML" });
       bot.sendMessage(ELAmain, message, { parse_mode: "HTML" });
-      // bot.sendMessage(Test, message, { parse_mode: "HTML" });
+      //bot.sendMessage(Test, message, { parse_mode: "HTML" });
     });
   }
 }, 300000);
