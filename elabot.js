@@ -171,7 +171,7 @@ bot.onText(/\/proposals/, async (msg, data) => {
     });
     bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
   } else {
-    proposals += `There are currently no proposals in the council voting period`;
+    proposals += `\n\nThere are currently no proposals in the council voting period`;
     bot.sendMessage(msg.chat.id, proposals, { parse_mode: "HTML" });
   }
 });
@@ -194,7 +194,8 @@ const council = {
 
 const Test = "-501549984"; // Bot test group
 const CRcouncil = "-313280674"; // CR council group
-const ELAmain = "-1001243388272"; // Elastos main chat
+const Elastos_Main = "-1001243388272"; // elastos main chat
+const Elastos_New = "-1001780081897"; // new elastos group
 
 // let storedHeight = 0;
 // setInterval(async () => {
@@ -302,8 +303,8 @@ setInterval(async () => {
 
       message += `<i><a href='https://www.cyberrepublic.org/proposals/${item._id}'>View the full proposal here</a></i>\n\nUse /proposals to fetch real time voting status`;
       bot.sendMessage(CRcouncil, message, { parse_mode: "HTML" });
-      bot.sendMessage(ELAmain, message, { parse_mode: "HTML" });
-      //bot.sendMessage(Test, message, { parse_mode: "HTML" });
+      bot.sendMessage(Elastos_Main, message, { parse_mode: "HTML" });
+      //bot.sendMessage(Elastos_New, message, { parse_mode: "HTML" });
     });
   }
 }, 300000);
